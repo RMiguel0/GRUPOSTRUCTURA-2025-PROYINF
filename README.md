@@ -6,7 +6,7 @@ Este es el repositorio del Grupo 07, cuyos integrantes son:
 *	DELGADO GABRIEL - 202373610-4
 *	REYES MIGUEL - 202273620-8
 *	RIVERO MIGUEL - 202373518-3
-*	Tutor: JAVIERA CRISTINA OSORIO MARDONES
+*	*Tutor*: JAVIERA CRISTINA OSORIO MARDONES
 
 ## Wiki
 
@@ -18,9 +18,7 @@ Puede acceder a la Wiki mediante el siguiente [enlace](https://gitlab.inf.utfsm.
 
 > Reemplazar con los enlaces correspondientes
 
-* [Video presentación cliente](https://www.youtube.com)
-* [Video presentación avance 1](https://www.youtube.com/)
-* Etc ...
+* [Video presentación cliente](https://aula.usm.cl/mod/resource/view.php?id=6926137)
 
 ## Aspectos técnicos relevantes
 
