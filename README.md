@@ -1,6 +1,6 @@
-# GRUPOSTRUCTURA-2025-PROYINF# Grupo 07
+# GRUPO STRUCTURA-2025-PROYINF# Grupo 07
 
-Este es el repositorio del Grupo 07, cuyos integrantes son:
+Este es el repositorio del **Grupo 07**, cuyos integrantes son:
 
 *	CARDENAS VICTOR - 202304528-4
 *	DELGADO GABRIEL - 202373610-4
