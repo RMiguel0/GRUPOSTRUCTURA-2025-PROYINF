@@ -10,7 +10,7 @@ Este es el repositorio del **Grupo 07**, cuyos integrantes son:
 
 ## Wiki
 
-Puede acceder a la Wiki mediante el siguiente [enlace](https://gitlab.inf.utfsm.cl/miguel.rivero/GRUPOSTRUCTURA-2025-PROYINF/-/wikis/home)
+Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/RMiguel0/GRUPOSTRUCTURA-2025-PROYINF/wiki)
 
 ## Videos
 
