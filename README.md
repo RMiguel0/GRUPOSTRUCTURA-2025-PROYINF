@@ -18,4 +18,6 @@ Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/RMigue
 
 ## Aspectos técnicos relevantes
 
-_Todo aspecto relevante cuando para poder usar el proyecto o consideraciones del proyecto base a ser entregado_
+### Levantar el proyecto
+- docker compose --up
+(No agregamos más para hacer aca ya que solo esta el codigo base para empezar el proyecto).
