@@ -1,0 +1,1 @@
+-- Datos semilla opcionales (ej. productos de crédito).

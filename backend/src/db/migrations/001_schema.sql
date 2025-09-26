@@ -1,0 +1,1 @@
+-- Migraciones SQL opcionales si prefieres ejecutarlas desde backend.

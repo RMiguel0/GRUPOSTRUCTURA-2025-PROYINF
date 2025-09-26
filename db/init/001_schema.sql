@@ -1,0 +1,3 @@
+-- SQL inicial de ejemplo. Puedes editar o reemplazar por migraciones.
+-- create extension if not exists "uuid-ossp"; -- activar si tu Postgres lo soporta
+-- CREATE TABLES AQUÍ
