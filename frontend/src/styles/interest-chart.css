@@ -1,0 +1,5 @@
+/* src/styles/interest-chart.css */
+.ic-wrap  { @apply mt-6; }
+.ic-title { @apply text-base md:text-lg font-semibold mb-2; }
+.ic-svg   { @apply w-full max-w-full; }
+.ic-axis  { @apply text-[10px] fill-gray-500; }

@@ -1,0 +1,17 @@
+
+  .sh-card { @apply bg-white rounded-2xl shadow-soft p-6; }
+  .sh-title { @apply flex items-center gap-2 mb-4; }
+  .sh-badge { @apply inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600; }
+  .sh-title-text { @apply text-xl font-semibold; }
+
+  .sh-empty { @apply text-center text-gray-500 bg-gray-50 rounded-xl py-10; }
+
+  .sh-list { @apply space-y-3; }
+  .sh-item { @apply bg-gray-50 rounded-xl px-5 py-4; }
+  .sh-grid { @apply grid grid-cols-2 md:grid-cols-5 items-center gap-4; }
+
+  .sh-meta-label { @apply text-xs text-gray-500 uppercase tracking-wide; }
+  .sh-meta-value { @apply font-semibold; }
+
+  .sh-del { @apply inline-flex items-center justify-center w-9 h-9 rounded-lg text-red-600 hover:text-white hover:bg-red-500 transition; }
+

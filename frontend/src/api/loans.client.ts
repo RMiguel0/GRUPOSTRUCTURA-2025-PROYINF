@@ -1,1 +1,0 @@
-// Funciones para /loans (placeholder)

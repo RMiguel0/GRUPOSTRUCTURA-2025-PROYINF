@@ -1,0 +1,19 @@
+
+  .fo-card { @apply bg-white rounded-2xl shadow-soft p-6; }
+  .fo-header { @apply flex items-center gap-2 mb-4; }
+  .fo-badge { @apply inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600; }
+  .fo-title { @apply text-xl font-semibold; }
+
+  .fo-grid { @apply grid grid-cols-2 gap-3; }
+
+  .fo-stat { @apply rounded-xl p-4; }
+  .fo-stat-inner { @apply flex items-center gap-2 mb-1; }
+  .fo-stat-icon { @apply inline-flex w-8 h-8 items-center justify-center rounded-lg bg-white/70; }
+  .fo-stat-title { @apply text-sm font-medium; }
+  .fo-stat-value { @apply text-2xl font-extrabold; }
+
+  .fo-stat--blue  { @apply bg-blue-100  text-blue-700; }
+  .fo-stat--green { @apply bg-emerald-100 text-emerald-700; }
+  .fo-stat--orange{ @apply bg-orange-100 text-orange-700; }
+  .fo-stat--gray  { @apply bg-gray-100  text-gray-700; }
+
