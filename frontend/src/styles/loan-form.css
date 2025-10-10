@@ -1,24 +1,33 @@
+/* --- contenedor / título --- */
+.lf-card { @apply bg-white rounded-2xl shadow-soft p-6; }
+.lf-title { @apply flex items-center gap-2 mb-5; }
+.lf-title-badge { @apply inline-flex items-center justify-center w-6 h-6 rounded-lg bg-blue-100 text-blue-600; }
+.lf-title-text { @apply text-lg font-semibold; }
 
-  /* Card + título con ícono */
-  .lf-card { @apply bg-white rounded-2xl shadow-soft p-6; }
-  .lf-title { @apply flex items-center gap-2 mb-4; }
-  .lf-title-badge { @apply inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600; }
-  .lf-title-text { @apply text-xl font-semibold; }
+/* --- layout de campos --- */
+.lf-fields { @apply space-y-5; }
+.lf-head { @apply flex items-baseline justify-between text-sm text-gray-600 mb-1; }
+.lf-help { @apply text-gray-400; }
 
-  /* Bloques de rango */
-  .lf-range-block { @apply space-y-6; }
-  .lf-range-head { @apply flex justify-between text-sm text-gray-600 mb-1; }
-  .lf-range-input { @apply w-full accent-blue-600; }
+/* --- inputs bonitos --- */
+.lf-input {
+  @apply w-full border border-gray-300 rounded-2xl p-3 text-gray-800 bg-white shadow-sm
+         focus:outline-none focus:ring focus:ring-blue-300 focus:border-blue-400;
+  appearance: none;
+}
 
-  /* Gráfico de interés */
-  .lf-chart-wrap { @apply mt-4; }
-  .lf-chart-title { @apply text-sm text-gray-600 mb-2; }
-  .lf-chart-card { @apply rounded-xl border bg-gray-50; }
-  .lf-chart-card-body { @apply p-4; }
+/* number spinners */
+.lf-input::-webkit-outer-spin-button,
+.lf-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.lf-input[type="number"] { -moz-appearance: textfield; }
 
-  /* Leyenda */
-  .lf-legend { @apply flex items-center gap-6 justify-center mt-3 text-sm; }
-  .lf-dot { @apply inline-block w-3 h-3 rounded-full; }
-  .lf-dot--principal { @apply bg-blue-500; }
-  .lf-dot--interest { @apply bg-orange-400; }
-
+/* select con flecha */
+.lf-select {
+  @apply w-full border border-gray-300 rounded-2xl p-3 pr-10 text-gray-800 bg-white shadow-sm
+         focus:outline-none focus:ring focus:ring-blue-300 focus:border-blue-400;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+}
