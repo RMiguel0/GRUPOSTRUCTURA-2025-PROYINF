@@ -1,18 +1,4 @@
-version: "3.9"
 services:
-  db:
-    image: postgres:16
-    container_name: app_db
-    environment:
-      POSTGRES_USER: banco
-      POSTGRES_PASSWORD: banco
-      POSTGRES_DB: banco
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d
-
   api:
     build:
       context: ./backend
@@ -20,31 +6,41 @@ services:
     container_name: app_api
     environment:
       NODE_ENV: development
-      PORT: 3000
-      DATABASE_URL: postgres://banco:banco@db:5432/banco
+      PORT: "3000"
       CORS_ORIGIN: http://localhost:5173
+      DATABASE_URL: postgres://banco:banco@db:5432/banco
+    depends_on:
+      db:
+        condition: service_started
     ports:
       - "3000:3000"
-    depends_on:
-      - db
     volumes:
-      - ./backend:/usr/src/app
-      - /usr/src/app/node_modules
+      - ./backend:/app
 
   web:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: app_web
-    environment:
-      VITE_API_URL: http://localhost:3000
     ports:
       - "5173:5173"
-    depends_on:
-      - api
+    environment:
+      VITE_API_URL: http://api:3000
     volumes:
-      - ./frontend:/usr/src/app
-      - /usr/src/app/node_modules
-
-volumes:
-  db_data:
+      - ./frontend:/app        # monta el código en /app
+      - /app/node_modules      # volumen anónimo: no pises node_modules
+    depends_on:
+      api:
+        condition: service_started
+  db:
+    image: postgres:16
+    container_name: app_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: banco
+      POSTGRES_PASSWORD: banco
+      POSTGRES_DB: banco
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d
