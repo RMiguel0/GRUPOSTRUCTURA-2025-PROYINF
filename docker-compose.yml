@@ -26,6 +26,8 @@ services:
       - "5173:5173"
     environment:
       VITE_API_URL: http://api:3000
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+      VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
     volumes:
       - ./frontend:/app        # monta el código en /app
       - /app/node_modules      # volumen anónimo: no pises node_modules
