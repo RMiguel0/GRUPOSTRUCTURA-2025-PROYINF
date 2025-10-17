@@ -11,10 +11,6 @@ dist/
 build/
 
 # Env
-.env
-backend/.env.example
-frontend/.env.example
-frontend/.env.local
 
 # IDE
 .vscode/
