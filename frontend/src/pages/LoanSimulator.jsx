@@ -1,0 +1,158 @@
+import { useState, useEffect } from 'react';
+import { Save, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase.js';
+import LoanForm from '../components/LoanForm.jsx';
+import { FinancialOverview } from '../components/FinancialOverview.jsx';
+import { SimulationHistory } from '../components/SimulationHistory.jsx';
+import { BankComparison } from '../components/BankComparison.jsx';
+
+/**
+ * Main page for the loan simulator. Handles fetching of previous simulations
+ * and bank rates, saving new simulations, and navigating to the application
+ * form. The current calculation is managed locally and passed down to
+ * child components.
+ */
+export function LoanSimulator() {
+  const navigate = useNavigate();
+  const [currentCalculation, setCurrentCalculation] = useState({
+    amount: 50000,
+    interestRate: 5.5,
+    termMonths: 60,
+    monthlyPayment: 0,
+    totalInterest: 0,
+    totalAmount: 0,
+  });
+  const [simulations, setSimulations] = useState([]);
+  const [bankRates, setBankRates] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    loadSimulations();
+    loadBankRates();
+  }, []);
+
+  async function loadSimulations() {
+    const { data, error } = await supabase
+      .from('loan_simulations')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Error loading simulations:', error);
+    } else if (data) {
+      setSimulations(data);
+    }
+  }
+
+  async function loadBankRates() {
+    const { data, error } = await supabase
+      .from('bank_rates')
+      .select('*')
+      .order('avg_rate', { ascending: true });
+
+    if (error) {
+      console.error('Error loading bank rates:', error);
+    } else if (data) {
+      setBankRates(data);
+    }
+  }
+
+  async function saveSimulation() {
+    setIsSaving(true);
+    const { error } = await supabase.from('loan_simulations').insert([
+      {
+        amount: currentCalculation.amount,
+        interest_rate: currentCalculation.interestRate,
+        term_months: currentCalculation.termMonths,
+        monthly_payment: currentCalculation.monthlyPayment,
+        total_interest: currentCalculation.totalInterest,
+        total_amount: currentCalculation.totalAmount,
+      },
+    ]);
+
+    if (error) {
+      console.error('Error saving simulation:', error);
+      alert('Failed to save simulation');
+    } else {
+      await loadSimulations();
+    }
+    setIsSaving(false);
+  }
+
+  async function deleteSimulation(id) {
+    const { error } = await supabase
+      .from('loan_simulations')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting simulation:', error);
+    } else {
+      await loadSimulations();
+    }
+  }
+
+  function handleApplyForLoan() {
+    navigate('/apply', {
+      state: {
+        amount: currentCalculation.amount,
+        termMonths: currentCalculation.termMonths,
+      },
+    });
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Simulador de Creditos</h1>
+          <p className="text-gray-600">
+            Compara tasas, calcula pagos y encuentra la mejor oferta
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <LoanForm onCalculate={setCurrentCalculation} />
+          </div>
+
+          <div className="space-y-6">
+            <FinancialOverview {...currentCalculation} />
+
+            <button
+              onClick={saveSimulation}
+              disabled={isSaving}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Save className="w-5 h-5" />
+              {isSaving ? 'Saving...' : 'Save Simulation'}
+            </button>
+
+            <button
+              onClick={handleApplyForLoan}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <FileText className="w-5 h-5" />
+              Aplica por este crédito
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <SimulationHistory simulations={simulations} onDelete={deleteSimulation} />
+        </div>
+
+        <div>
+          <BankComparison
+            amount={currentCalculation.amount}
+            termMonths={currentCalculation.termMonths}
+            currentRate={currentCalculation.interestRate}
+            bankRates={bankRates}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

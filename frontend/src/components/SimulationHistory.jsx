@@ -1,69 +1,81 @@
-// src/components/SimulationHistory.jsx
-import React from 'react'
-import { History, Trash2 } from 'lucide-react'
-import { formatCurrency, formatPercentage } from '../utils/loanCalculations.js'
+import { History, Trash2 } from 'lucide-react';
+import { formatCurrency, formatPercentage } from '../utils/loanCalculations.js';
 
-import '../styles/simulation-history.css'
+/**
+ * Displays a list of saved simulations with the ability to delete
+ * individual entries. If no simulations are provided a placeholder
+ * message encourages the user to create their first simulation.
+ *
+ * @param {Object} props
+ * @param {Array<Object>} props.simulations List of saved simulations.
+ * @param {(id: string) => void} props.onDelete Callback invoked when deleting a simulation.
+ */
+export function SimulationHistory({ simulations, onDelete }) {
+  if (!simulations || simulations.length === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-green-100 rounded-lg">
+            <History className="w-6 h-6 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800">Simulaciones guardadas</h2>
+        </div>
+        <p className="text-gray-500 text-center py-8">
+          No hay simulaciones guardadas aún. ¡Crea tu primera simulación arriba!
+        </p>
+      </div>
+    );
+  }
 
-export default function SimulationHistory({ simulations = [], onDelete = () => {} }) {
   return (
-    <section className="sh-card">
-      {/* Título con ícono */}
-      <div className="sh-title">
-        <span className="sh-badge">
-          <History className="w-5 h-5" />
-        </span>
-        <h2 className="sh-title-text">Simulaciones Guardadas</h2>
+    <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-green-100 rounded-lg">
+          <History className="w-6 h-6 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800">Simulaciones guardadas</h2>
       </div>
 
-      {/* Vacío */}
-      {(!simulations || simulations.length === 0) && (
-        <div className="sh-empty">
-          No hay simulaciones guardadas. ¡Crea tu primera simulación arriba!
-        </div>
-      )}
-
-      {/* Lista */}
-      <ul className="sh-list">
-        {simulations.map((s) => (
-          <li
-            key={s.id ?? `${s.amount}-${s.created_at}`}
-            className="sh-item"
+      <div className="space-y-3">
+        {simulations.map((sim) => (
+          <div
+            key={sim.id}
+            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <div className="sh-grid">
+            <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <p className="sh-meta-label">Monto</p>
-                <p className="sh-meta-value">{formatCurrency(s.amount)}</p>
+                <p className="text-xs text-gray-500">Monto</p>
+                <p className="font-semibold text-gray-800">{formatCurrency(sim.amount)}</p>
               </div>
-
               <div>
-                <p className="sh-meta-label">Tasa</p>
-                <p className="sh-meta-value">{formatPercentage(s.interest_rate * 100 || 0)}</p>
+                <p className="text-xs text-gray-500">Tasa</p>
+                <p className="font-semibold text-gray-800">
+                  {formatPercentage(sim.interest_rate)}
+                </p>
               </div>
-
               <div>
-                <p className="sh-meta-label">Plazo</p>
-                <p className="sh-meta-value">{s.term_months} meses</p>
+                <p className="text-xs text-gray-500">Plazo</p>
+                <p className="font-semibold text-gray-800">
+                  {sim.term_months} meses
+                </p>
               </div>
-
               <div>
-                <p className="sh-meta-label">Mensual</p>
-                <p className="sh-meta-value">{formatCurrency(s.monthly_payment)}</p>
-              </div>
-
-              <div className="flex md:justify-end">
-                <button
-                  onClick={() => onDelete(s)}
-                  title="Eliminar simulación"
-                  className="sh-del"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                <p className="text-xs text-gray-500">Mensual</p>
+                <p className="font-semibold text-gray-800">
+                  {formatCurrency(sim.monthly_payment)}
+                </p>
               </div>
             </div>
-          </li>
+            <button
+              onClick={() => onDelete(sim.id)}
+              className="ml-4 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              aria-label="Eliminar simulación"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
         ))}
-      </ul>
-    </section>
-  )
+      </div>
+    </div>
+  );
 }

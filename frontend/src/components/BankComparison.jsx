@@ -1,143 +1,125 @@
-// src/components/BankComparison.jsx
-import React from 'react'
-import {
-  calculateBankComparison,
-  formatCurrency,
-  formatPercentage,
-} from '../utils/loanCalculations.js'
-import {
-  Banknote,
-  BadgeCheck,
-  ArrowDownRight,
-  ArrowUpRight,
-  Info,
-} from 'lucide-react'
+import { Building2, TrendingDown, TrendingUp } from 'lucide-react';
+import { calculateBankComparison, formatCurrency, formatPercentage } from '../utils/loanCalculations.js';
 
-import '../styles/bank-comparison.css'
+/**
+ * Display a comparison of different bank offers for a given loan.
+ *
+ * @param {Object} props
+ * @param {number} props.amount The principal amount of the loan.
+ * @param {number} props.termMonths The loan term in months.
+ * @param {number} props.currentRate The current interest rate to compare against.
+ * @param {Array<Object>} props.bankRates A list of bank rate objects returned from the backend.
+ */
+export function BankComparison({ amount, termMonths, currentRate, bankRates }) {
+  // Calculate a comparison for each bank and sort the result by monthly payment
+  const comparisons = (bankRates || [])
+    .map((bank) => {
+      const calculation = calculateBankComparison(amount, termMonths, bank.avg_rate);
+      const currentCalculation = calculateBankComparison(amount, termMonths, currentRate);
+      const difference = calculation.monthlyPayment - currentCalculation.monthlyPayment;
+      const totalDifference = calculation.totalAmount - currentCalculation.totalAmount;
 
-export default function BankComparison({
-  amount = 0,
-  termMonths = 0,
-  currentRate = 0,
-  bankRates = [],
-}) {
-  const current = calculateBankComparison(amount, termMonths, currentRate)
-
-  const rows = (bankRates || []).map((b) => {
-    const rate = b.avg_rate ?? b.rate ?? 0
-    const calc = calculateBankComparison(amount, termMonths, rate)
-
-    const deltaMonthly = current.monthlyPayment - calc.monthlyPayment
-    const deltaTotal = current.totalAmount - calc.totalAmount
-    const isBetter = deltaMonthly > 0
-
-    return {
-      name: b.bank_name ?? b.name ?? 'Bank',
-      rate,
-      monthly: calc.monthlyPayment,
-      interest: calc.totalInterest,
-      total: calc.totalAmount,
-      isBetter,
-      deltaMonthly,
-      deltaTotal,
-      minTerm: b.min_term_months ?? b.min_term ?? 0,
-      maxTerm: b.max_term_months ?? b.max_term ?? 0,
-    }
-  })
+      return {
+        bank,
+        calculation,
+        difference,
+        totalDifference,
+        isBetter: difference < 0,
+      };
+    })
+    .sort((a, b) => a.calculation.monthlyPayment - b.calculation.monthlyPayment);
 
   return (
-    <section className="bc-card">
-      {/* Header */}
-      <div className="bc-header">
-        <span className="bc-badge">
-          <Banknote className="w-5 h-5" />
-        </span>
-        <h2 className="bc-title">Comparar Bancos</h2>
+    <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 bg-amber-100 rounded-lg">
+          <Building2 className="w-6 h-6 text-amber-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800">Comparacion de bancos</h2>
       </div>
 
-      {/* Info bar */}
-      <div className="bc-info">
-        <Info className="w-4 h-4" />
-        <span>
-          Comparando ofertas de {rows.length} banco{rows.length === 1 ? '' : 's'} para un{' '}
-          préstamo de {formatCurrency(amount)} a {termMonths} meses
-        </span>
+      <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <p className="text-sm text-blue-800">
+          Comparando ofertas de {bankRates.length} banco
+          {bankRates.length === 1 ? '' : 's'} {formatCurrency(amount)} para un prestamo de {termMonths} meses
+        </p>
       </div>
 
-      {/* Cards */}
-      <div className="bc-list">
-        {rows.map((r, i) => (
+      <div className="grid gap-4">
+        {comparisons.map(({ bank, calculation, difference, totalDifference, isBetter }) => (
           <div
-            key={i}
-            className={"bc-offer"}
+            key={bank.id}
+            className={`p-5 rounded-lg border-2 transition-all ${
+              isBetter
+                ? 'bg-green-50 border-green-300 hover:border-green-400'
+                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+            }`}
           >
-            {/* Best deal badge */}
-            {r.isBetter && (
-              <span className="bc-best-pill">
-                <BadgeCheck className="w-4 h-4" /> Mejor Oferta
-              </span>
-            )}
-
-            {/* Grid 4 cols */}
-            <div className="bc-grid">
-              {/* Bank + avg rate */}
+            <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="font-semibold">{r.name}</p>
-                <p className="bc-subtle">Tasas:
-                  {formatPercentage(r.rate - 0.7)} – {formatPercentage(r.rate + 0.8)}
+                <h3 className="text-lg font-bold text-gray-800">{bank.bank_name}</h3>
+                <p className="text-sm text-gray-600">
+                  Tarifas {formatPercentage(bank.min_rate)} - {formatPercentage(bank.max_rate)}
                 </p>
+              </div>
+              {isBetter && (
+                <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
+                  Mejor contrato
+                </span>
+              )}
+            </div>
 
-                <div className="mt-3">
-                  <p className="bc-meta">Rango de tasas</p>
-                  <p className="bc-val">{formatPercentage(r.rate)}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Promedio de Tarifa</p>
+                <p className="text-lg font-bold text-gray-800">{formatPercentage(bank.avg_rate)}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Pago Mensual</p>
+                <p className="text-lg font-bold text-gray-800">
+                  {formatCurrency(calculation.monthlyPayment)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Interes total</p>
+                <p className="text-lg font-bold text-gray-800">
+                  {formatCurrency(calculation.totalInterest)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-600 mb-1">vs tu Tarifa</p>
+                <div className="flex items-center gap-1">
+                  {isBetter ? (
+                    <TrendingDown className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <TrendingUp className="w-4 h-4 text-red-600" />
+                  )}
+                  <p
+                    className={`text-lg font-bold ${
+                      isBetter ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
+                    {isBetter ? '' : '+'}
+                    {formatCurrency(Math.abs(difference))}
+                  </p>
                 </div>
-              </div>
-
-              {/* Monthly */}
-              <div>
-                <p className="bc-meta">Pago Mensual</p>
-                <p className="bc-val">{formatCurrency(r.monthly)}</p>
-              </div>
-
-              {/* Total interest */}
-              <div>
-                <p className="bc-meta">Interes Total</p>
-                <p className="bc-val">{formatCurrency(r.interest)}</p>
-              </div>
-
-              {/* vs your rate */}
-              <div className="text-right">
-                <p className="bc-meta">vs Tu Tasa</p>
-
-                {r.isBetter ? (
-                  <div className="bc-delta-good">
-                    <ArrowDownRight className="w-5 h-5" />
-                    {formatCurrency(Math.abs(r.deltaMonthly))}{' '}
-                    <span className="text-xs font-normal text-green-700/80">/ mo</span>
-                  </div>
-                ) : (
-                  <div className="bc-delta-bad">
-                    <ArrowUpRight className="w-5 h-5" />
-                    {formatCurrency(Math.abs(r.deltaMonthly))}{' '}
-                    <span className="text-xs font-normal text-red-600/80">/ mo</span>
-                  </div>
-                )}
-
-                <p className="bc-subtle">
-                  {r.isBetter ? 'Save' : 'Extra'} {formatCurrency(Math.abs(r.deltaTotal))} total
+                <p className="text-xs text-gray-500">
+                  {isBetter ? 'Ahorro' : 'Extra'} {formatCurrency(Math.abs(totalDifference))} total
                 </p>
               </div>
             </div>
 
-            {/* Terms strip */}
-            <div className="bc-terms">
-              <span className="bc-subtle">
-                Plazos disponibles: {r.minTerm || '?'} – {r.maxTerm || '?'} meses
-              </span>
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <p className="text-xs text-gray-600">
+                Términos disponibles: {bank.min_term_months} - {bank.max_term_months} meses
+              </p>
             </div>
           </div>
         ))}
       </div>
-    </section>
-  )
+    </div>
+  );
 }
