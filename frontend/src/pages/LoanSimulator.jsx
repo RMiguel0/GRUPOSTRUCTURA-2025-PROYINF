@@ -6,6 +6,7 @@ import LoanForm from '../components/LoanForm.jsx';
 import { FinancialOverview } from '../components/FinancialOverview.jsx';
 import { SimulationHistory } from '../components/SimulationHistory.jsx';
 import { BankComparison } from '../components/BankComparison.jsx';
+import { useSimulaciones } from '../hooks/useSimulaciones.js';
 
 /**
  * Main page for the loan simulator. Handles fetching of previous simulations
@@ -14,6 +15,7 @@ import { BankComparison } from '../components/BankComparison.jsx';
  * child components.
  */
 export function LoanSimulator() {
+  const { simulaciones, guardar, cargar, eliminar } = useSimulaciones();
   const navigate = useNavigate();
   const [currentCalculation, setCurrentCalculation] = useState({
     amount: 50000,
@@ -23,27 +25,39 @@ export function LoanSimulator() {
     totalInterest: 0,
     totalAmount: 0,
   });
-  const [simulations, setSimulations] = useState([]);
   const [bankRates, setBankRates] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [simulacionCargada, setSimulacionCargada] = useState(null);
 
   useEffect(() => {
-    loadSimulations();
-    loadBankRates();
+    cargar();
   }, []);
 
-  async function loadSimulations() {
-    const { data, error } = await supabase
-      .from('loan_simulations')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    if (error) {
-      console.error('Error loading simulations:', error);
-    } else if (data) {
-      setSimulations(data);
+  function saveSimulation() {
+    setIsSaving(true);
+    try {
+      guardar(currentCalculation);
+      cargar(); // ← fuerza la recarga del estado desde cookies
+    } catch (error) {
+      console.error('Error saving simulation:', error);
+      alert('Failed to save simulation');
     }
+    setIsSaving(false);
+  }
+
+
+
+  function deleteSimulation(index) {
+    eliminar(index);
+  }
+
+  function loadSimulations() {
+    const simulaciones = recuperarsimulaciones();
+    setSimulations(simulaciones);
+  }
+
+  function handleLoad(simulacion) {
+    setSimulacionCargada(simulacion);
   }
 
   async function loadBankRates() {
@@ -56,41 +70,6 @@ export function LoanSimulator() {
       console.error('Error loading bank rates:', error);
     } else if (data) {
       setBankRates(data);
-    }
-  }
-
-  async function saveSimulation() {
-    setIsSaving(true);
-    const { error } = await supabase.from('loan_simulations').insert([
-      {
-        amount: currentCalculation.amount,
-        interest_rate: currentCalculation.interestRate,
-        term_months: currentCalculation.termMonths,
-        monthly_payment: currentCalculation.monthlyPayment,
-        total_interest: currentCalculation.totalInterest,
-        total_amount: currentCalculation.totalAmount,
-      },
-    ]);
-
-    if (error) {
-      console.error('Error saving simulation:', error);
-      alert('Failed to save simulation');
-    } else {
-      await loadSimulations();
-    }
-    setIsSaving(false);
-  }
-
-  async function deleteSimulation(id) {
-    const { error } = await supabase
-      .from('loan_simulations')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error deleting simulation:', error);
-    } else {
-      await loadSimulations();
     }
   }
 
@@ -115,7 +94,11 @@ export function LoanSimulator() {
 
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2">
-            <LoanForm onCalculate={setCurrentCalculation} />
+            <LoanForm 
+              initialAmount={simulacionCargada?.amount}
+              initialTermMonths={simulacionCargada?.termMonths}
+              onCalculate={setCurrentCalculation} 
+            />
           </div>
 
           <div className="space-y-6">
@@ -141,7 +124,7 @@ export function LoanSimulator() {
         </div>
 
         <div className="mb-6">
-          <SimulationHistory simulations={simulations} onDelete={deleteSimulation} />
+          <SimulationHistory simulations={simulaciones} onDelete={deleteSimulation} onLoad={handleLoad}/>
         </div>
 
         <div>
