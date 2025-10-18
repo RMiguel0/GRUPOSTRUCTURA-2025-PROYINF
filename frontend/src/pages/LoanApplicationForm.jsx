@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Camera,
   Upload,
@@ -9,10 +9,12 @@ import {
   Briefcase,
   ArrowLeft,
   CheckCircle,
-} from 'lucide-react';
-import { supabase } from '../lib/supabase.js';
-import { extractTextFromImage, parsePassportData } from '../utils/ocrService.js';
-import { formatCurrency } from '../utils/loanCalculations.js';
+} from "lucide-react";
+import {
+  extractTextFromImage,
+  parsePassportData,
+} from "../utils/ocrService.js";
+import { formatCurrency } from "../utils/loanCalculations.js";
 
 /**
  * Form for capturing personal information needed to submit a loan application.
@@ -30,12 +32,12 @@ export function LoanApplicationForm() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    identification: '',
-    fullName: '',
-    email: '',
-    phone: '',
-    monthlyIncome: '',
-    employmentStatus: 'employed',
+    identification: "",
+    fullName: "",
+    email: "",
+    phone: "",
+    monthlyIncome: "",
+    employmentStatus: "employed",
     dataConsent: false,
   });
 
@@ -54,54 +56,57 @@ export function LoanApplicationForm() {
         fullName: parsedData.fullName || prev.fullName,
       }));
     } catch (error) {
-      console.error('OCR Error:', error);
-      alert('Failed to process image. Please enter details manually.');
+      console.error("OCR Error:", error);
+      alert("Failed to process image. Please enter details manually.");
     } finally {
       setIsProcessing(false);
     }
   }
 
-  async function handleSubmit(e) {
+  const INTEREST_RATE = 1.2;
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!formData.dataConsent) {
-      alert('Please consent to the use of your data to continue.');
+      // puedes dejar este alert de validación
+      alert("Debes consentir el uso de datos para continuar.");
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true); // solo para mostrar “Enviando...”
     try {
-      const { error } = await supabase.from('loan_applications').insert([
-        {
+      const application = {
+        applicant: {
+          fullName: formData.fullName,
           identification: formData.identification,
-          full_name: formData.fullName,
           email: formData.email,
           phone: formData.phone,
-          monthly_income: parseFloat(formData.monthlyIncome),
-          employment_status: formData.employmentStatus,
-          requested_amount: amount,
-          requested_term_months: termMonths,
-          data_consent: formData.dataConsent,
+          monthlyIncome: Number(formData.monthlyIncome),
+          employmentStatus: formData.employmentStatus,
+          dataConsent: formData.dataConsent,
         },
-      ]);
+        loan: {
+          amount: Number(amount),
+          termMonths: Number(termMonths),
+          interestRate: INTEREST_RATE,
+          bankPreference: "Structura Bank",
+          purpose: "Consumo",
+        },
+        meta: { createdAt: new Date().toISOString(), source: "form" },
+      };
 
-      if (error) throw error;
-
-      alert('¡Solicitud enviada exitosamente!');
-      navigate('/');
-    } catch (error) {
-      console.error('Submission Error:', error);
-      alert('No se pudo enviar la solicitud. Inténtelo de nuevo.');
+      localStorage.setItem("loanApplicationDraft", JSON.stringify(application));
+      navigate("/contract-review", { state: { application } });
     } finally {
+      // si navegas, esto casi no se ve, pero por si acaso
       setIsSubmitting(false);
     }
-  }
-
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
       <div className="container mx-auto px-4 max-w-3xl">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate("/")}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -110,22 +115,30 @@ export function LoanApplicationForm() {
 
         <div className="bg-white rounded-xl shadow-lg p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Solicitud de préstamo</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              Solicitud de préstamo
+            </h1>
             <p className="text-gray-600">
               Completa el formulario para solicitar tu credito
             </p>
           </div>
 
           <div className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h2 className="font-semibold text-blue-900 mb-2">Detalles del credito</h2>
+            <h2 className="font-semibold text-blue-900 mb-2">
+              Detalles del credito
+            </h2>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-blue-700">Cantidad solicitada</p>
-                <p className="text-lg font-bold text-blue-900">{formatCurrency(amount)}</p>
+                <p className="text-lg font-bold text-blue-900">
+                  {formatCurrency(amount)}
+                </p>
               </div>
               <div>
                 <p className="text-blue-700">Plazo</p>
-                <p className="text-lg font-bold text-blue-900">{termMonths} meses</p>
+                <p className="text-lg font-bold text-blue-900">
+                  {termMonths} meses
+                </p>
               </div>
             </div>
           </div>
@@ -136,7 +149,8 @@ export function LoanApplicationForm() {
               Escanea Passport/RUT (Opcional)
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Carga la foto de tu pasaporte o RUT para auto completar los datos de identificacion
+              Carga la foto de tu pasaporte o RUT para auto completar los datos
+              de identificacion
             </p>
             <div className="flex gap-4">
               <button
@@ -146,7 +160,7 @@ export function LoanApplicationForm() {
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors"
               >
                 <Upload className="w-5 h-5" />
-                {isProcessing ? 'Procesando...' : 'Cargar Documento'}
+                {isProcessing ? "Procesando..." : "Cargar Documento"}
               </button>
               <input
                 ref={fileInputRef}
@@ -277,6 +291,7 @@ export function LoanApplicationForm() {
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
+                required
                 id="consent"
                 checked={formData.dataConsent}
                 onChange={(e) =>
@@ -295,7 +310,7 @@ export function LoanApplicationForm() {
               className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <CheckCircle className="w-5 h-5" />
-              {isSubmitting ? 'Enviando...' : 'Enviar Solicitud'}
+              {isSubmitting ? "Enviando..." : "Enviar Solicitud"}
             </button>
           </form>
         </div>
