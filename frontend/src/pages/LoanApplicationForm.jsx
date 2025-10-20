@@ -81,7 +81,7 @@ export function LoanApplicationForm() {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="environment"         {/* ⬅️ ayuda en móviles */}
+            capture="environment"
             onChange={handleImageUpload}
             className="hidden"
           />
@@ -101,7 +101,7 @@ export function LoanApplicationForm() {
             type="text"
             required
             value={formData.identification}
-            onChange={handleRutChange}       {/* ⬅️ cambia aquí */}
+            onChange={handleRutChange}
             placeholder="12.345.678-9"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
