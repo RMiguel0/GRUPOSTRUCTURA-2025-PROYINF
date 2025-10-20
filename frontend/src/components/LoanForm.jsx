@@ -6,11 +6,20 @@ import { calculateLoan, formatCurrency } from "../utils/loanCalculations.js"
 
 const toNumber = (v) => Number(String(v).replace(",", ".")) || 0
 
-export default function LoanForm({ onCalculate = () => {} }) {
-  const [amount, setAmount] = useState(50000)
-  const [interestRate, setInterestRate] = useState(5.5) // %
-  const [termMonths, setTermMonths] = useState(60)
+export default function LoanForm({ onCalculate = () => {}, initialAmount, initialTermMonths }) {
+
+  const [amount, setAmount] = useState(initialAmount ?? 50000)
+  const interestRate = 5.5
+  const [termMonths, setTermMonths] = useState(initialTermMonths ?? 60)
   const [result, setResult] = useState(null)
+
+  useEffect(() => {
+    if (initialAmount !== undefined) setAmount(initialAmount);
+  }, [initialAmount]);
+
+  useEffect(() => {
+    if (initialTermMonths !== undefined) setTermMonths(initialTermMonths);
+  }, [initialTermMonths]);
 
   useEffect(() => {
     const calc = calculateLoan(amount, interestRate, termMonths)
@@ -48,16 +57,8 @@ export default function LoanForm({ onCalculate = () => {} }) {
         {/* Tasa (%) */}
         <div>
           <div className="lf-head">
-            <span>Tasa de Interés: {interestRate.toFixed(2)}%</span>
-            <span className="lf-help">0% — 20%</span>
+            <span>Tasa de Interés Fija: {interestRate.toFixed(2)}%</span>
           </div>
-          <input
-            type="number" min={0} max={20} step={0.1} inputMode="decimal"
-            value={interestRate}
-            onChange={(e) => setInterestRate(toNumber(e.target.value))}
-            className="lf-input"
-            placeholder="Ej: 5.5"
-          />
         </div>
 
         {/* Plazo */}

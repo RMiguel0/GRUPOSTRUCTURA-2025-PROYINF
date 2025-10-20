@@ -10,7 +10,8 @@ import { formatCurrency, formatPercentage } from '../utils/loanCalculations.js';
  * @param {Array<Object>} props.simulations List of saved simulations.
  * @param {(id: string) => void} props.onDelete Callback invoked when deleting a simulation.
  */
-export function SimulationHistory({ simulations, onDelete }) {
+export function SimulationHistory({ simulations, onDelete, onLoad }) {
+  console.log('Simulaciones recibidas:', simulations);
   if (!simulations || simulations.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -37,9 +38,9 @@ export function SimulationHistory({ simulations, onDelete }) {
       </div>
 
       <div className="space-y-3">
-        {simulations.map((sim) => (
+        {simulations.map((sim, index) => (
           <div
-            key={sim.id}
+            key={index}
             className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -50,28 +51,35 @@ export function SimulationHistory({ simulations, onDelete }) {
               <div>
                 <p className="text-xs text-gray-500">Tasa</p>
                 <p className="font-semibold text-gray-800">
-                  {formatPercentage(sim.interest_rate)}
+                  {formatPercentage(sim.interestRate)}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">Plazo</p>
                 <p className="font-semibold text-gray-800">
-                  {sim.term_months} meses
+                  {sim.termMonths} meses
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">Mensual</p>
                 <p className="font-semibold text-gray-800">
-                  {formatCurrency(sim.monthly_payment)}
+                  {formatCurrency(sim.monthlyPayment)}
                 </p>
               </div>
             </div>
             <button
-              onClick={() => onDelete(sim.id)}
+              onClick={() => onDelete(index)}
               className="ml-4 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
               aria-label="Eliminar simulación"
             >
               <Trash2 className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => onLoad(sim)}
+              className="ml-2 p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              aria-label="Cargar simulación"
+            >
+              Cargar
             </button>
           </div>
         ))}
