@@ -1,6 +1,9 @@
 // pages/ContractReview.jsx
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import LivenessCheck from "../components/LivenessCheck.jsx";
+import EmailVerification from "../components/EmailVerification.jsx";
+import { validarRUT } from "../utils/rutUtils.js";
 
 export default function ContractReview() {
   const location = useLocation();
@@ -40,6 +43,19 @@ export default function ContractReview() {
     [fromState, fromStorage]
   );
 
+  // Estados para validación de identidad
+  const [rutOk, setRutOk] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [livenessOk, setLivenessOk] = useState(false);
+
+  useEffect(() => {
+    // Validar RUT al cargar la página
+    const id = application?.applicant?.identification;
+    if (id) {
+      setRutOk(validarRUT(id));
+    }
+  }, [application]);
+
   useEffect(() => {
     if (fromState) {
       try {
@@ -55,6 +71,9 @@ export default function ContractReview() {
 
   const onConfirm = () => navigate("/", { replace: true, state: { contractAccepted: true } });
   const onBack = () => navigate(-1);
+
+  // La solicitud solo puede confirmarse si todos los pasos de verificación están completos
+  const canConfirm = rutOk && emailVerified && livenessOk;
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -75,6 +94,25 @@ export default function ContractReview() {
           <li><strong>Email:</strong> {application?.applicant?.email ?? "—"}</li>
           <li><strong>Teléfono:</strong> {application?.applicant?.phone ?? "—"}</li>
         </ul>
+      </section>
+
+      <section className="mb-6 border rounded-xl p-4">
+        <h2 className="font-medium mb-3">Verificación de identidad</h2>
+        <div className="space-y-4">
+          {/* Validación de RUT */}
+          <p className="text-sm">
+            RUT válido: {rutOk ? <span className="text-green-600">Sí ✅</span> : <span className="text-red-600">No ❌</span>}
+          </p>
+          {/* Verificación de correo */}
+          {application?.applicant?.email && (
+            <EmailVerification
+              email={application.applicant.email}
+              onVerified={() => setEmailVerified(true)}
+            />
+          )}
+          {/* Prueba de vida */}
+          <LivenessCheck onPassed={() => setLivenessOk(true)} />
+        </div>
       </section>
 
       <section className="mb-6 border rounded-xl p-4">
@@ -99,7 +137,14 @@ export default function ContractReview() {
 
       <div className="flex gap-3">
         <button onClick={onBack} className="px-4 py-2 rounded-lg border">Volver</button>
-        <button onClick={onConfirm} className="px-4 py-2 rounded-lg bg-black text-white">Confirmar</button>
+        <button
+          onClick={onConfirm}
+          disabled={!canConfirm}
+          className="px-4 py-2 rounded-lg text-white "
+          style={{ backgroundColor: canConfirm ? "#000000" : "#cccccc" }}
+        >
+          Confirmar
+        </button>
       </div>
 
       <p className="text-xs text-gray-500 mt-6">
