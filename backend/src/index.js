@@ -1,5 +1,4 @@
 // backend/src/index.js
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import crypto from 'node:crypto';
@@ -7,7 +6,6 @@ import crypto from 'node:crypto';
 import { generateOtp, saveOtp, verifyAndConsumeOtp } from './utils/otp.js';
 import { sendOtpEmail } from './utils/email.js';
 import 'dotenv/config';
-import ocrRoutes from './ocrRoutes.js';
 
 
 const app = express();

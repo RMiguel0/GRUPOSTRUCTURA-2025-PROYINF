@@ -11,10 +11,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
-import {
-  extractTextFromImage,
-  parsePassportData,
-} from "../utils/ocrService.js";
+import { extractTextFromImage } from '../utils/ocrService.js';
 import { formatCurrency } from "../utils/loanCalculations.js";
 
 /**
@@ -45,24 +42,30 @@ export function LoanApplicationForm() {
   });
 
   async function handleImageUpload(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setIsProcessing(true);
-    try {
-      const text = await extractTextFromImage(file);
-      const parsedData = parsePassportData(text);
-      setFormData((prev) => ({
-        ...prev,
-        identification: parsedData.identification || prev.identification,
-        fullName: parsedData.fullName || prev.fullName,
-      }));
-    } catch (error) {
-      console.error("OCR Error:", error);
-      alert("Failed to process image. Please enter details manually.");
-    } finally {
-      setIsProcessing(false);
-    }
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  setIsProcessing(true);
+  try {
+    // Llama al backend (usa tu nuevo ocrService.js)
+    const data = await extractTextFromImage(file);
+
+    // data viene del backend: { identification, fullName, rawText }
+    setFormData((prev) => ({
+      ...prev,
+      identification: data.identification || prev.identification,
+      fullName: data.fullName || prev.fullName,
+    }));
+
+    console.log("✅ OCR resultado:", data);
+  } catch (error) {
+    console.error("❌ OCR Error:", error);
+    alert("No se pudo procesar la imagen. Ingrese los datos manualmente.");
+  } finally {
+    setIsProcessing(false);
   }
+}
+
   async function handleSubmit(e) {
     e.preventDefault();
 

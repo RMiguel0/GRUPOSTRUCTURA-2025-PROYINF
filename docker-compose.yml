@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: app_api
     env_file:                      # ← inyecta backend/.env al contenedor
-      - ./backend/.env
+      - ./backend/.env 
     environment:
       NODE_ENV: development
       PORT: "3000"
@@ -27,7 +27,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_URL: http://api:3000
+      VITE_API_URL: http://localhost:3000
       VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
       VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
     volumes:
