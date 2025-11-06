@@ -4,6 +4,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: app_api
+    env_file:                      # ← inyecta backend/.env al contenedor
+      - ./backend/.env
     environment:
       NODE_ENV: development
       PORT: "3000"
@@ -29,8 +31,8 @@ services:
       VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
       VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
     volumes:
-      - ./frontend:/app        # monta el código en /app
-      - /app/node_modules      # volumen anónimo: no pises node_modules
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       api:
         condition: service_started

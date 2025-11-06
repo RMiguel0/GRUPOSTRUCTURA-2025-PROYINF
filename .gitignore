@@ -19,3 +19,6 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# GOOGLE
+backend/keys/round-legacy-477423-p6-f62e0d36b276.json
