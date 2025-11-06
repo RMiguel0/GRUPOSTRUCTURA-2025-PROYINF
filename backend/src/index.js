@@ -1,18 +1,30 @@
-import express from "express";
-import cors from "cors";
-import crypto from "node:crypto";
-import { generateOtp, saveOtp, verifyAndConsumeOtp } from "./utils/otp.js";
+// backend/src/index.js
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import crypto from 'node:crypto';
+
+import { generateOtp, saveOtp, verifyAndConsumeOtp } from './utils/otp.js';
+import { sendOtpEmail } from './utils/email.js';
+import 'dotenv/config';
 
 const app = express();
 app.use(express.json());
 
-// Si corres en Docker, muchas veces el frontend entra como http://localhost:5173 o http://127.0.0.1:5173
-app.use(cors({
-  origin: [/^http:\/\/localhost:5173$/, /^http:\/\/127\.0\.0\.1:5173$/],
-}));
+// CORS (Vite en host local o dentro de Docker)
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://host.docker.internal:5173',
+    ],
+    credentials: true,
+  }),
+);
 
-// --- Solicitud de préstamo (tu stub actual) ---
-app.post("/api/applications", (req, res) => {
+// --- Solicitud de préstamo (stub) ---
+app.post('/api/applications', (req, res) => {
   const {
     identification,
     fullName,
@@ -30,7 +42,7 @@ app.post("/api/applications", (req, res) => {
   const amt = Number(amount || 0);
   const dti = (amt / income) * 100;
   const score = Math.round(650 + Math.max(-100, 50 - dti));
-  const decision = score >= 620 && dataConsent ? "pre-approved" : "referred";
+  const decision = score >= 620 && dataConsent ? 'pre-approved' : 'referred';
 
   const applicationId = crypto.randomUUID();
 
@@ -54,38 +66,55 @@ app.post("/api/applications", (req, res) => {
   });
 });
 
-// --- OTP: enviar ---
-app.post("/api/otp/send", async (req, res) => {
-  const { email } = req.body || {};
-  if (!email || typeof email !== "string") {
-    return res.status(400).json({ success: false, error: "invalid_email" });
+// --- OTP: enviar (via SendGrid) ---
+app.post('/api/otp/send', async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'invalid_email' });
+    }
+
+    const code = generateOtp(6);
+    // guarda por 10 minutos (TTL en milisegundos)
+    saveOtp(email, code, 10 * 60 * 1000);
+
+    // envía por correo con SendGrid
+    const sent = await sendOtpEmail({ to: email, code });
+    if (!sent?.ok) {
+      return res.status(500).json({ success: false, error: 'send_failed' });
+    }
+
+    // Para desarrollo puedes ver el código en la respuesta.
+    const reveal =
+      process.env.SEND_OTP_IN_RESPONSE === 'true' ||
+      process.env.NODE_ENV !== 'production';
+
+    return res.json({ success: true, ...(reveal ? { code } : {}) });
+  } catch (err) {
+    console.error('[/api/otp/send] error:', err);
+    return res.status(500).json({ success: false, error: 'internal_error' });
   }
-
-  const code = generateOtp(6);
-  saveOtp(email, code, 10); // expira en 10 minutos
-
-  // En demo devolvemos el código en el response.
-  // En producción, envíalo por correo con Nodemailer y NO lo devuelvas.
-  return res.json({ success: true, code });
 });
 
 // --- OTP: verificar ---
-app.post("/api/otp/verify", (req, res) => {
+app.post('/api/otp/verify', (req, res) => {
   const { email, code } = req.body || {};
-  if (!email || typeof email !== "string" || !code) {
-    return res.status(400).json({ success: false, error: "missing_params" });
+  if (!email || typeof email !== 'string' || !code) {
+    return res.status(400).json({ success: false, error: 'missing_params' });
   }
 
-  const result = verifyAndConsumeOtp(email, code);
+  const result = verifyAndConsumeOtp(email, String(code));
   if (!result.ok) {
     const http = { not_found: 404, expired: 410, mismatch: 401 };
-    return res.status(http[result.reason] || 400).json({ success: false, error: result.reason });
+    return res
+      .status(http[result.reason] || 400)
+      .json({ success: false, error: result.reason });
   }
 
   return res.json({ success: true });
 });
 
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Stub API listening on :${PORT}`));
