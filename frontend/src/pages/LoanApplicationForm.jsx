@@ -11,15 +11,13 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
-import { extractTextFromImage } from '../utils/ocrService.js';
+import { extractTextFromImage } from "../utils/ocrService.js";
 import { formatCurrency } from "../utils/loanCalculations.js";
 
 /**
- * Form for capturing personal information needed to submit a loan application.
- * Includes optional OCR scanning of identity documents to pre-fill the
- * identification and full name fields. On submit the application is sent
- * to the Supabase backend and the user is redirected to ContractReview.jsx
- * con los datos necesarios en location.state.application.
+ * Form para capturar datos y (opcional) escanear documento.
+ * Se guarda la imagen del documento para validación facial en /identity-check
+ * antes de ContractReview.
  */
 export function LoanApplicationForm() {
   const location = useLocation();
@@ -30,6 +28,9 @@ export function LoanApplicationForm() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ⬇️ guardamos el archivo del documento para IdentityCheck
+  const [docImageFile, setDocImageFile] = useState(null);
 
   const [formData, setFormData] = useState({
     identification: "",
@@ -42,29 +43,41 @@ export function LoanApplicationForm() {
   });
 
   async function handleImageUpload(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  setIsProcessing(true);
-  try {
-    // Llama al backend (usa tu nuevo ocrService.js)
-    const data = await extractTextFromImage(file);
+    setDocImageFile(file); // para la comparación facial
 
-    // data viene del backend: { identification, fullName, rawText }
-    setFormData((prev) => ({
-      ...prev,
-      identification: data.identification || prev.identification,
-      fullName: data.fullName || prev.fullName,
-    }));
+    // ➜ respaldo: guarda un dataURL en sessionStorage (por si el File se pierde al navegar)
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          sessionStorage.setItem("idDocDataURL", reader.result);
+        } catch {}
+      };
+      reader.readAsDataURL(file);
+    } catch {}
 
-    console.log("✅ OCR resultado:", data);
-  } catch (error) {
-    console.error("❌ OCR Error:", error);
-    alert("No se pudo procesar la imagen. Ingrese los datos manualmente.");
-  } finally {
-    setIsProcessing(false);
+    setIsProcessing(true);
+    try {
+      // Backend OCR: retorna { identification, fullName, rawText }
+      const data = await extractTextFromImage(file);
+
+      setFormData((prev) => ({
+        ...prev,
+        identification: data.identification || prev.identification,
+        fullName: data.fullName || prev.fullName,
+      }));
+
+      console.log("✅ OCR resultado:", data);
+    } catch (error) {
+      console.error("❌ OCR Error:", error);
+      alert("No se pudo procesar la imagen. Ingrese los datos manualmente.");
+    } finally {
+      setIsProcessing(false);
+    }
   }
-}
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -95,7 +108,7 @@ export function LoanApplicationForm() {
       console.error("Error al insertar:", err);
       alert("Hubo un error al enviar la solicitud, pero continuaremos.");
     } finally {
-      // 🔹 Redirección garantizada, aunque el insert falle
+      // → Datos que usarán IdentityCheck y luego ContractReview
       const application = {
         applicant: {
           fullName: formData.fullName,
@@ -115,7 +128,12 @@ export function LoanApplicationForm() {
         meta: { createdAt: new Date().toISOString(), source: "apply-form" },
       };
 
-      navigate("/contract-review", { state: { application } });
+      // ⬇️ pasamos por IdentityCheck y enviamos File + dataURL (respaldo)
+      const dataURL = sessionStorage.getItem("idDocDataURL") || null;
+
+      navigate("/identity-check", {
+        state: { application, idImageFile: docImageFile || null, idImageDataURL: dataURL },
+      });
       setIsSubmitting(false);
     }
   }
@@ -160,6 +178,7 @@ export function LoanApplicationForm() {
             </div>
           </div>
 
+          {/* OCR / subida de documento */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <Camera className="w-5 h-5" /> Escanea Passport/RUT (Opcional)
@@ -188,6 +207,7 @@ export function LoanApplicationForm() {
             </div>
           </div>
 
+          {/* Formulario principal (igual que antes) */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
