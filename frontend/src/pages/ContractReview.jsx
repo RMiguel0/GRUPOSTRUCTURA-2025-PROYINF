@@ -110,8 +110,6 @@ export default function ContractReview() {
               onVerified={() => setEmailVerified(true)}
             />
           )}
-          {/* Prueba de vida */}
-          <LivenessCheck onPassed={() => setLivenessOk(true)} />
         </div>
       </section>
 
