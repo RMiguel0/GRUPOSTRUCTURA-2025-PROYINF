@@ -10,7 +10,9 @@ import {
   ArrowLeft,
   CheckCircle,
 } from "lucide-react";
-import { supabase } from "../lib/supabase.js";
+// Eliminamos la inserción directa en Supabase en esta etapa. La
+// persistencia se realizará en el backend luego del scoring.
+import { validarRUT } from "../utils/rutUtils.js";
 import { extractTextFromImage } from "../utils/ocrService.js";
 import { formatCurrency } from "../utils/loanCalculations.js";
 
@@ -28,6 +30,9 @@ export function LoanApplicationForm() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Error state for RUT validation
+  const [rutError, setRutError] = useState("");
 
   // ⬇️ guardamos el archivo del documento para IdentityCheck
   const [docImageFile, setDocImageFile] = useState(null);
@@ -81,59 +86,57 @@ export function LoanApplicationForm() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-
+    // Reset any previous RUT error
+    setRutError("");
+    // Validate RUT before anything else
+    if (!validarRUT(formData.identification)) {
+      setRutError("RUT inválido. Por favor revisa el formato y dígito verificador.");
+      return;
+    }
     if (!formData.dataConsent) {
-      alert("Please consent to the use of your data to continue.");
+      alert("Debes consentir el uso de tus datos para continuar.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await supabase.from("loan_applications").insert([
-        {
-          identification: formData.identification,
-          full_name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          monthly_income: parseFloat(formData.monthlyIncome),
-          employment_status: formData.employmentStatus,
-          requested_amount: amount,
-          requested_term_months: termMonths,
-          data_consent: formData.dataConsent,
-        },
-      ]);
-
-      alert("¡Solicitud enviada exitosamente!");
-    } catch (err) {
-      console.error("Error al insertar:", err);
-      alert("Hubo un error al enviar la solicitud, pero continuaremos.");
-    } finally {
-      // → Datos que usarán IdentityCheck y luego ContractReview
+      // Construimos el objeto de solicitud para IdentityCheck y scoring
       const application = {
         applicant: {
           fullName: formData.fullName,
           identification: formData.identification,
           email: formData.email,
           phone: formData.phone,
+          monthlyIncome: parseFloat(formData.monthlyIncome),
+          employmentStatus: formData.employmentStatus,
         },
         loan: {
           amount,
           termMonths,
-          interestRate:
-            (location.state && location.state.interestRate) ?? undefined,
-          bankPreference:
-            (location.state && location.state.bankPreference) ?? undefined,
+          // Pasamos cualquier dato extra del simulador
+          interestRate: (location.state && location.state.interestRate) ?? undefined,
+          bankPreference: (location.state && location.state.bankPreference) ?? undefined,
           purpose: (location.state && location.state.purpose) ?? undefined,
         },
         meta: { createdAt: new Date().toISOString(), source: "apply-form" },
       };
 
-      // ⬇️ pasamos por IdentityCheck y enviamos File + dataURL (respaldo)
+      // Guardamos en localStorage por si el usuario recarga durante el flujo
+      try {
+        localStorage.setItem("loanApplicationDraft", JSON.stringify(application));
+      } catch {}
+
+      // Preparamos imagen en sessionStorage para IdentityCheck
       const dataURL = sessionStorage.getItem("idDocDataURL") || null;
 
       navigate("/identity-check", {
-        state: { application, idImageFile: docImageFile || null, idImageDataURL: dataURL },
+        state: {
+          application,
+          idImageFile: docImageFile || null,
+          idImageDataURL: dataURL,
+        },
       });
+    } finally {
       setIsSubmitting(false);
     }
   }
@@ -181,11 +184,11 @@ export function LoanApplicationForm() {
           {/* OCR / subida de documento */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Camera className="w-5 h-5" /> Escanea Passport/RUT (Opcional)
+              <Camera className="w-5 h-5" /> Escanea Passport/RUT
             </h3>
             <p className="text-sm text-gray-600 mb-4">
               Carga la foto de tu pasaporte o RUT para auto completar los datos
-              de identificación
+              de identificación, despues será usada para validar tu identidad.
             </p>
             <div className="flex gap-4">
               <button
@@ -219,12 +222,23 @@ export function LoanApplicationForm() {
                 type="text"
                 required
                 value={formData.identification}
-                onChange={(e) =>
-                  setFormData({ ...formData, identification: e.target.value })
-                }
+                onChange={(e) => {
+                  setFormData({ ...formData, identification: e.target.value });
+                  setRutError("");
+                }}
+                onBlur={() => {
+                  if (formData.identification) {
+                    if (!validarRUT(formData.identification)) {
+                      setRutError("RUT inválido. Por favor revisa el formato y dígito verificador.");
+                    } else {
+                      setRutError("");
+                    }
+                  }
+                }}
                 placeholder="12345678-9"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${rutError ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {rutError && <p className="mt-1 text-xs text-red-600">{rutError}</p>}
             </div>
 
             <div>

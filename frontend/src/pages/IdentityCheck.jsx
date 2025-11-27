@@ -48,6 +48,10 @@ export default function IdentityCheck() {
   // Para “Reintentar” la coincidencia facial remonta el componente
   const [faceRunId, setFaceRunId] = useState(0);
 
+  // Estado para manejar envío al backend y errores
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState('');
+
   // Valida RUT al montar
   useEffect(() => {
     const id = application?.applicant?.identification;
@@ -86,20 +90,67 @@ export default function IdentityCheck() {
 
   const allOk = rutOk && emailVerified && faceOk;
 
-  const handleContinue = () => {
-    // Empacamos el estado de identidad para referencia en ContractReview (opcional)
-    navigate("/contract-review", {
-      state: {
-        application,
-        identity: {
-          rutOk,
-          emailVerified,
-          faceOk,
-          allOk,
-        },
-      },
-      replace: true,
-    });
+  const handleContinue = async () => {
+    if (!allOk) return;
+    setServerError('');
+    setSubmitting(true);
+    try {
+      // Extraemos datos necesarios para scoring
+      const ident = application?.applicant?.identification;
+      const fullName = application?.applicant?.fullName;
+      const email = application?.applicant?.email;
+      const phone = application?.applicant?.phone;
+      const monthlyIncome = application?.applicant?.monthlyIncome;
+      const employmentStatus = application?.applicant?.employmentStatus;
+      const amount = application?.loan?.amount;
+      const termMonths = application?.loan?.termMonths;
+
+      const res = await fetch('/api/loans/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identification: ident,
+          fullName,
+          email,
+          phone,
+          monthlyIncome,
+          employmentStatus,
+          amount,
+          termMonths,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error('network');
+      }
+      const data = await res.json();
+      if (data.rejected) {
+        setServerError('Tu solicitud fue rechazada por alto riesgo. No podemos ofrecer este crédito.');
+        setSubmitting(false);
+        return;
+      }
+      // data.application contiene el registro guardado
+      const contract = data.application;
+      const evaluation = {
+        score: data.score,
+        risk: data.risk,
+        interestRateMonthly: data.interestRateMonthly,
+        interestRateAnnual: data.interestRateAnnual,
+        monthlyPayment: data.monthlyPayment,
+      };
+      // Guardamos en localStorage para recuperación
+      try {
+        localStorage.setItem('latestContract', JSON.stringify({ contract, evaluation }));
+      } catch {}
+      navigate('/contract-review', {
+        state: { contract, evaluation },
+        replace: true,
+      });
+    } catch (err) {
+      console.error('Error al aplicar solicitud:', err);
+      setServerError('Ocurrió un error al evaluar tu solicitud. Intenta nuevamente.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -114,19 +165,6 @@ export default function IdentityCheck() {
       </p>
 
       {/* Datos del solicitante, como en ContractReview */}
-      <section className="mb-6 border rounded-xl p-4">
-        <h2 className="font-medium mb-3">Datos del solicitante</h2>
-        <ul className="text-sm leading-7">
-          <li><strong>Nombre:</strong> {application?.applicant?.fullName ?? "—"}</li>
-          <li><strong>RUT:</strong> {application?.applicant?.identification ?? "—"}{" "}
-            {application?.applicant?.identification && (
-              rutOk ? <span className="text-green-600"> (válido) ✅</span> : <span className="text-red-600"> (inválido) ❌</span>
-            )}
-          </li>
-          <li><strong>Email:</strong> {email || "—"}</li>
-          <li><strong>Teléfono:</strong> {application?.applicant?.phone ?? "—"}</li>
-        </ul>
-      </section>
 
       {/* Verificación de correo (migrada desde ContractReview) */}
       <section className="mb-6 border rounded-xl p-4">
@@ -166,17 +204,20 @@ export default function IdentityCheck() {
       </section>
 
       {/* CTA */}
+      {serverError && (
+        <div className="mb-4 text-sm text-red-600">{serverError}</div>
+      )}
       <div className="flex gap-3">
         <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg border">
           Volver
         </button>
         <button
           onClick={handleContinue}
-          disabled={!allOk}
+          disabled={!allOk || submitting}
           className="px-4 py-2 rounded-lg text-white"
-          style={{ backgroundColor: allOk ? "#000000" : "#cccccc" }}
+          style={{ backgroundColor: allOk && !submitting ? '#000000' : '#cccccc' }}
         >
-          Continuar al contrato
+          {submitting ? 'Evaluando...' : 'Continuar al contrato'}
         </button>
       </div>
     </div>

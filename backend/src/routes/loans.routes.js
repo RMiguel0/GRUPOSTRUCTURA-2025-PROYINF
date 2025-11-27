@@ -4,11 +4,14 @@ import * as controller from '../controllers/loans.controller.js';
 
 const router = Router();
 
-// Ejemplos de rutas (implementa en controllers/ cuando estés listo)
-// router.post('/simulate', controller.simulateLoan);
-// router.post('/applications', controller.createApplication);
-// router.get('/applications/:id', controller.getApplicationById);
+// Endpoint para simular un préstamo. Calcula el score, riesgo y tasa
+// usando los datos del formulario (monto, plazo, ingreso, estado laboral).
+router.post('/simulate', controller.simulateLoan);
 
+// Apply for a loan: evaluate and persist. Returns evaluation and saved record if accepted.
+router.post('/apply', controller.applyLoan);
+
+// Placeholder para otras rutas futuras (crear solicitud, etc.)
 router.get('/placeholder', (_req, res) => res.json({ msg: 'Loans routes ready' }));
 
 export default router;

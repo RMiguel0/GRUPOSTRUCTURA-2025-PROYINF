@@ -120,6 +120,17 @@ import 'dotenv/config';
 import ocrRoutes from './routes/ocr.routes.js';
 app.use('/api', ocrRoutes);
 
+// --- Loan simulation ---
+// Endpoint to evaluate a loan application based solely on form inputs.
+// It computes a credit score and assigns an interest rate according to
+// predefined thresholds. If the applicant is deemed high risk the loan
+// will be rejected and no rate will be returned.
+import { evaluateApplication } from './utils/scoring.js';
+import routes from './routes/index.js';
+
+// Mount modular routes for loans and other services under /api.
+app.use('/api', routes);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Stub API listening on :${PORT}`));
 
