@@ -21,7 +21,7 @@ export default function ContractReview() {
   const record = contract || fromStorage?.contract || null;
   const evalResult = evaluation || fromStorage?.evaluation || null;
 
-  // Manejar formatos
+  // Manejar formatos de dinero
   const money = (n) =>
     new Intl.NumberFormat('es-CL', {
       style: 'currency',
@@ -46,6 +46,40 @@ export default function ContractReview() {
     );
   }
 
+  // 🔄 Normalizar nombres de campos (snake_case vs camelCase)
+  const applicantName =
+    record.full_name ??
+    record.fullName ??
+    '—';
+
+  const identification =
+    record.identification ?? '—';
+
+  const email =
+    record.email ?? '—';
+
+  const phone =
+    record.phone ?? '—';
+
+  const requestedAmount =
+    record.requested_amount ??
+    record.amount ??
+    0;
+
+  const requestedTermMonths =
+    record.requested_term_months ??
+    record.termMonths ??
+    '';
+
+  const createdAtRaw =
+    record.created_at ??
+    record.createdAt ??
+    null;
+
+  const createdAtLabel = createdAtRaw
+    ? new Date(createdAtRaw).toLocaleString()
+    : '—';
+
   // Derivar tasas como porcentaje
   const rateMonthlyPct = evalResult.interestRateMonthly
     ? (evalResult.interestRateMonthly * 100).toFixed(2)
@@ -61,18 +95,21 @@ export default function ContractReview() {
       <section className="mb-6 border rounded-xl p-4">
         <h2 className="font-medium mb-3">Datos del solicitante</h2>
         <ul className="text-sm leading-7">
-          <li><strong>Nombre:</strong> {record.full_name ?? '—'}</li>
-          <li><strong>RUT:</strong> {record.identification ?? '—'}</li>
-          <li><strong>Email:</strong> {record.email ?? '—'}</li>
-          <li><strong>Teléfono:</strong> {record.phone ?? '—'}</li>
+          <li><strong>Nombre:</strong> {applicantName}</li>
+          <li><strong>RUT:</strong> {identification}</li>
+          <li><strong>Email:</strong> {email}</li>
+          <li><strong>Teléfono:</strong> {phone}</li>
         </ul>
       </section>
 
       <section className="mb-6 border rounded-xl p-4">
         <h2 className="font-medium mb-3">Detalles del crédito</h2>
         <ul className="text-sm leading-7">
-          <li><strong>Monto solicitado:</strong> {money(record.requested_amount)}</li>
-          <li><strong>Plazo:</strong> {record.requested_term_months} meses</li>
+          <li><strong>Monto solicitado:</strong> {money(requestedAmount)}</li>
+          <li>
+            <strong>Plazo:</strong>{' '}
+            {requestedTermMonths ? `${requestedTermMonths} meses` : '—'}
+          </li>
           <li><strong>Cuota mensual estimada:</strong> {money(evalResult.monthlyPayment)}</li>
           <li><strong>Tasa mensual:</strong> {rateMonthlyPct}%</li>
           <li><strong>Tasa anual equivalente:</strong> {rateAnnualPct}%</li>
@@ -94,13 +131,17 @@ export default function ContractReview() {
         <button onClick={onBack} className="px-4 py-2 rounded-lg border">
           Volver
         </button>
-        <button onClick={onConfirm} className="px-4 py-2 rounded-lg text-white" style={{ backgroundColor: '#000000' }}>
+        <button
+          onClick={onConfirm}
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: '#000000' }}
+        >
           Confirmar
         </button>
       </div>
 
       <p className="text-xs text-gray-500 mt-6">
-        Solicitud creada: {new Date(record.created_at).toLocaleString()}
+        Solicitud creada: {createdAtLabel}
       </p>
     </div>
   );

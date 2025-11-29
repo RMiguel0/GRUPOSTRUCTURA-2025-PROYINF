@@ -66,6 +66,62 @@ app.post('/api/applications', (req, res) => {
   });
 });
 
+app.post('/api/loans/apply', (req, res) => {
+  const {
+    identification,
+    fullName,
+    email,
+    phone,
+    monthlyIncome,
+    employmentStatus,
+    amount,
+    termMonths,
+  } = req.body || {};
+
+  // Validación mínima de campos obligatorios
+  if (
+    !identification ||
+    !fullName ||
+    !email ||
+    amount == null ||
+    termMonths == null
+  ) {
+    return res.status(400).json({
+      error: 'missing_required_fields',
+    });
+  }
+
+  // Usa tu función de scoring con los parámetros correctos
+  const amt = Number(amount);
+  const term = Number(termMonths);
+  const income = Number(monthlyIncome);
+
+  const evalResult = evaluateApplication(amt, term, income, employmentStatus);
+  // evalResult: { score, risk, interestRateMonthly, interestRateAnnual, monthlyPayment, rejected }
+
+  // Construimos un "contrato" / aplicación persistible
+  const applicationId = crypto.randomUUID();
+  const application = {
+    id: applicationId,
+    identification,
+    fullName,
+    email,
+    phone,
+    monthlyIncome,
+    employmentStatus,
+    amount,
+    termMonths,
+    status: evalResult.rejected ? 'REJECTED' : 'APPROVED',
+    createdAt: new Date().toISOString(),
+  };
+
+  return res.status(201).json({
+    application,
+    ...evalResult, // score, risk, interestRateMonthly, interestRateAnnual, monthlyPayment, rejected
+  });
+});
+
+
 // --- OTP: enviar (via SendGrid) ---
 app.post('/api/otp/send', async (req, res) => {
   try {
